@@ -104,7 +104,7 @@ Actions are `run`, `dry-run`, `status`, `adopt`, `harvest`, `schedule`, and
 
 | Argument | Description |
 |---|---|
-| `--project PATH` | Project to evolve (default: current directory) |
+| `--project PATH` | Project used for transcript scope, targets, state, and staging (default: current directory) |
 | `--scope invoked\|all` | Harvest this project or all projects |
 | `--source claude\|codex\|cursor\|auto` | Transcript source; `auto` keeps Codex-then-Claude precedence and does not select Cursor |
 | `--backend mock\|claude\|codex\|copilot\|cursor\|handoff\|azure_openai` | Replay/optimizer backend |
@@ -134,13 +134,29 @@ but redaction is not a guarantee that outbound prompts contain no sensitive
 data.
 
 `--backend cursor` launches an installed, authenticated `cursor-agent`, sends
-prompts over stdin, and parses its JSON result. Ordinary model calls use
-read-only Ask mode. Replays that validate tool use run in an isolated temporary
-workspace with an isolated Cursor config. Agent-mode sandboxing is disabled so
-the local headless configuration allowlists only the generated tool shims; file
-reads, file writes, and MCP tools are denied. These calls do not use `--force`
-or automatic MCP approval. Cursor and the model provider selected by Cursor can
-receive the prompt content. Organization-enforced Cursor policies still apply.
+prompts over stdin, and parses its JSON result. SkillOpt reads the target skill
+and includes its text in replay prompts; it does not invoke that file as a native
+Cursor skill. Ordinary mining, replay, judging, and reflection calls use
+read-only Ask mode in a new empty temporary workspace. Project file reads, file
+writes, and MCP tools are denied. `--project` does not change that execution
+workspace.
+
+Replays that validate tool use run in another isolated temporary workspace with
+an isolated Cursor config. Agent-mode sandboxing is disabled so the local
+headless configuration allowlists only generated shims. The shims record calls
+and return synthetic canned output; they do not invoke same-named project tools.
+These calls do not use `--force` or automatic MCP approval. Organization-enforced
+Cursor policies still apply. The current Cursor backend therefore does not
+provide end-to-end validation for skills that need repository inspection, real
+CLIs, browsers, running services, or file changes.
+
+There is no implemented fresh-worktree Cursor replay. If a report says
+`replay: mock`, that is the prompt-replay label and does not mean the mock model
+backend was selected. Both `run` and `dry-run` perform real-backend provider
+calls; `dry-run` suppresses staging, adoption, and persisted state changes, not
+spend. Session and task limits do not impose hard provider-call, token, time, or
+monetary budgets.
+Cursor and its selected model provider can receive the prompt content.
 
 Cursor-specific settings are available through the CLI, config, and environment:
 
@@ -149,6 +165,11 @@ Cursor-specific settings are available through the CLI, config, and environment:
 | Transcript home | `--cursor-home PATH` | `"cursor_home": "/path/to/.cursor"` | none |
 | Agent executable | `--cursor-path PATH` | `"cursor_path": "/path/to/cursor-agent"` | `SKILLOPT_SLEEP_CURSOR_PATH` |
 | Model | `--model NAME` | `"model": "NAME"` | `SKILLOPT_SLEEP_CURSOR_MODEL` |
+
+Use `cursor-agent --list-models` to inspect model identifiers available to the
+authenticated account. When cost depends on a model variant, confirm the billed
+variant in Cursor's usage reporting rather than relying only on its display
+name.
 
 Target the learned project skill explicitly so accepted updates are visible to
 Cursor without modifying the plugin's own `skillopt-sleep` workflow skill:
@@ -159,6 +180,13 @@ skillopt-sleep run --project "$(pwd)" \
   --target-skill-path .cursor/skills/skillopt-sleep-learned/SKILL.md \
   --max-sessions 5 --max-tasks 3 --progress
 ```
+
+The first harvest uses a 72-hour lookback unless `--lookback-hours` is set. A
+value of `0` considers all available history while still respecting
+`--max-sessions`. A stateful `run`, including a run that mines no tasks, records
+a new harvest checkpoint; subsequent runs use that checkpoint rather than the
+initial lookback. Use `harvest` or `dry-run` to verify counts before the first
+stateful run.
 
 The managed `schedule` command persists the project, backend, time, and optional
 auto-adopt setting only. It does not copy source, Cursor paths, model, or target

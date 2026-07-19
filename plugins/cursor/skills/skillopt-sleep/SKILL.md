@@ -99,8 +99,16 @@ Actions are `status`, `harvest`, `dry-run`, `run`, `adopt`, `schedule`, and
 - `--cursor-path PATH` or `SKILLOPT_SLEEP_CURSOR_PATH` selects a non-default
   `cursor-agent` executable.
 - `--model NAME` or `SKILLOPT_SLEEP_CURSOR_MODEL` overrides the Cursor model.
+- Check model identifiers with `cursor-agent --list-models`; when cost matters,
+  verify the billed variant in Cursor's usage reporting.
 - Keep live runs bounded with `--max-sessions`, `--max-tasks`, and `--progress`.
 - A held-out gain is evidence for that run, not a promise of general improvement.
+
+The first harvest uses a 72-hour lookback. Use `--lookback-hours N` for a wider
+initial window or `--lookback-hours 0` for all available history. A stateful
+`run`, including a no-task run, records a harvest checkpoint; later runs use the
+checkpoint rather than the initial lookback. Inspect counts with `harvest` or
+`dry-run` before the first real run because those actions do not advance state.
 
 Available backends are:
 
@@ -112,12 +120,24 @@ Available backends are:
 - `handoff` - prompt/answer files for an interactive agent session;
 - `azure_openai` - the configured Azure OpenAI endpoint.
 
-Ordinary Cursor backend calls use read-only Ask mode. A tool-validated replay
-uses an isolated temporary workspace and isolated Cursor config. Agent-mode
-sandboxing is disabled so the local headless configuration allowlists only the
-generated tool shims; file reads, file writes, and MCP tools are denied. It does
-not use `--force` or automatic MCP approval. Organization-enforced Cursor
-policies still apply. Do not weaken those boundaries to make a replay pass.
+SkillOpt reads the target skill and inserts its text into replay prompts; it does
+not invoke the file as a native Cursor skill. Ordinary Cursor backend calls run
+in a new empty temporary workspace in read-only Ask mode. File reads, file
+writes, and MCP tools are denied. `--project` controls harvesting, target files,
+state, and staging; it is not the Cursor Agent execution workspace.
+
+A tool-validated replay uses another isolated temporary workspace and Cursor
+config. Its generated local shims record calls and return synthetic output; they
+do not run project tools with the same names. Agent-mode sandboxing is disabled
+so the local headless configuration allowlists only those shims. It does not use
+`--force` or automatic MCP approval. Organization-enforced Cursor policies still
+apply. Do not claim that repository- or tool-dependent behavior was validated,
+and do not weaken these boundaries to make a replay pass. The current engine
+does not implement a fresh-worktree replay for Cursor.
+
+A real-backend `dry-run` still makes provider calls; it only suppresses staging.
+Session and task limits are workload bounds, not hard limits on calls, tokens,
+time, or money. Start with small limits.
 
 ## Reviewable data path
 

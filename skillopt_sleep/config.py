@@ -47,7 +47,7 @@ DEFAULTS: Dict[str, Any] = {
     "preferences": "",            # free-text house rules injected into reflect as a prior
     "gate_metric": "mixed",       # hard | soft | mixed (mixed best for tiny holdouts)
     "gate_mixed_weight": 0.5,
-    "replay_mode": "mock",        # "mock" (sandboxed prompt) | "fresh" (worktree)
+    "replay_mode": "mock",        # report label; fresh-worktree replay is not implemented
     # ── dream + recall (opt-in; defaults reproduce the prior single-shot loop) ─
     "dream_rollouts": 1,          # >1 => multi-rollout contrastive reflection per task
     "dream_factor": 0,            # >0 => add N synthetic variants of each task to the dream

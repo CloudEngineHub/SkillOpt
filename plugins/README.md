@@ -74,10 +74,12 @@ optimization.
   secret-shaped strings are redacted, but this is defense in depth rather than
   a guarantee that outbound prompts are secret-free.
 - The Cursor backend sends prompts through the installed, authenticated
-  `cursor-agent` CLI. Ordinary calls use read-only Ask mode; tool-validated
-  tasks run in an isolated temporary workspace and Cursor config with only the
-  generated local shims allowlisted. Cursor and the model provider selected by
-  Cursor can receive the resulting prompt content.
+  `cursor-agent` CLI. Ordinary calls use read-only Ask mode in a new empty
+  temporary workspace with project file access denied. Tool-validated tasks use
+  another isolated workspace with only synthetic generated shims allowlisted;
+  those shims record calls and return canned output rather than invoking project
+  tools. Cursor and the model provider selected by Cursor can receive the
+  resulting prompt content.
 - Outbound prompts are not currently guaranteed to be free of secrets. Do not
   use a third-party provider on sensitive transcripts without reviewing the data
   source and the provider's retention policy.
@@ -132,6 +134,14 @@ Common implemented flags include:
 The nightly CLI does **not** currently expose `--gate`, `--rollouts-k`,
 `--optimizer-model`, `--target-model`, `--budget-tokens`, or `--budget-minutes`.
 Do not pass experiment-harness flags to the main CLI.
+
+For the Cursor backend, `--project` also selects target files, state, and the
+staging location, but it does not make that directory the Cursor Agent execution
+workspace. The target skill is inserted as prompt text rather than invoked as a
+native skill. Real-backend `dry-run` performs the same mining and replay model
+calls while suppressing staging, adoption, and persisted state changes. The
+current Sleep cycle does not implement fresh-worktree replay; a `replay: mock`
+report label describes prompt replay and is independent of `--backend mock`.
 
 ### Preferences
 

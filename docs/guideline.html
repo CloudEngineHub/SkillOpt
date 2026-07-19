@@ -463,6 +463,12 @@ skillopt-sleep adopt --project "$PWD"</code></pre>
     not on <code>PATH</code>. Target
     <code>.cursor/skills/skillopt-sleep-learned/SKILL.md</code> explicitly so
     adoption updates a project skill rather than the plugin's workflow skill.</p>
+    <p>The Cursor backend inserts that skill text into prompts; it does not
+    invoke the file as a native skill. Ordinary calls run in read-only Ask mode
+    in an empty temporary workspace and cannot inspect files under
+    <code>--project</code>. Tool-validation shims return synthetic output rather
+    than running project CLIs. This validates textual guidance, not end-to-end
+    repository, browser, service, or filesystem workflows.</p>
     <p>For subscription-based workflows that should not launch an API or model
     subprocess, use <code>--backend handoff</code> and follow the generated
     prompt/answer loop. Read the
@@ -502,6 +508,7 @@ skillopt-sleep adopt --project "$PWD"</code></pre>
           <tr><td><code>dream_rollouts</code></td><td>1</td><td>Single rollout by default; values above 1 enable experimental contrastive replay.</td></tr>
           <tr><td><code>dream_factor</code></td><td>0</td><td>Synthetic task variants are off by default.</td></tr>
           <tr><td><code>recall_k</code></td><td>0</td><td>Historical associative recall is off by default.</td></tr>
+          <tr><td><code>replay_mode</code></td><td>mock</td><td>Reporting label for prompt replay; fresh-worktree replay is not implemented.</td></tr>
         </tbody>
       </table>
     </div>
@@ -533,6 +540,9 @@ skillopt-sleep adopt --project "$PWD"</code></pre>
       user/assistant text, explicit turn errors, and tool names. The Cursor
       backend still sends transcript-derived prompts through
       <code>cursor-agent</code> to Cursor's selected model provider.</li>
+      <li>A real-backend <code>dry-run</code> still performs provider calls; it
+      suppresses staging rather than spend. Session and task limits are not hard
+      provider-call, token, time, or monetary budgets.</li>
       <li>Updates are staged for review by default. Use
       <code>--auto-adopt</code> only when you have an independent rollback and
       validation process.</li>

@@ -17,7 +17,7 @@ normal agent requests.
 One "night":
 
 ```
-harvest Claude Code / Codex / Cursor transcripts → mine recurring tasks → replay offline
+harvest Claude Code / Codex / Cursor transcripts → mine recurring tasks → replay in isolated model calls
    → consolidate (reflect → bounded edit → GATE on real held-out tasks)
    → stage proposal → (you) adopt
 ```
@@ -37,10 +37,11 @@ experience → long-term competence).
 > The Cursor source reads local user/assistant message text, explicit turn errors,
 > and tool names, but excludes tool arguments, tool outputs, and non-message records.
 > Known secret-shaped strings are redacted as defense in depth. The Cursor backend
-> sends prompts through `cursor-agent`; ordinary calls use read-only Ask mode and
-> tool-validated tasks use an isolated temporary workspace and Cursor config with
-> only generated local shims allowlisted. Cursor and the model provider selected
-> by Cursor may therefore receive transcript-derived content.
+> sends prompts through `cursor-agent`; ordinary calls use read-only Ask mode in an
+> empty temporary workspace with project files denied. Tool-validated tasks use
+> synthetic local shims in another isolated workspace, not real project tools.
+> Cursor and the model provider selected by Cursor may therefore receive
+> transcript-derived content.
 
 ## How to use it
 
@@ -98,6 +99,20 @@ skillopt-sleep run --project "$(pwd)" \
   --target-skill-path .cursor/skills/skillopt-sleep-learned/SKILL.md \
   --max-sessions 5 --max-tasks 3 --progress
 ```
+
+The target skill is supplied to Cursor as prompt text; it is not invoked as a
+native skill. `--project` selects transcript scope, target files, state, and
+staging, but ordinary Cursor calls cannot inspect that project's files. The
+current backend therefore evaluates textual guidance rather than end-to-end
+repository, CLI, browser, or service workflows. Generated tool shims return
+synthetic output and do not run project commands.
+
+The initial harvest window is 72 hours. Set `--lookback-hours N` explicitly when
+older sessions should be considered; `0` scans all history subject to the
+session limit. A stateful `run`, even with no mined tasks, advances the harvest
+checkpoint. Use `harvest` or `dry-run` to inspect counts first. A real-backend
+`dry-run` still incurs provider calls and spend, and session/task limits are not
+hard call, token, time, or monetary budgets.
 
 The managed scheduler records only the project, backend, time, and optional
 auto-adopt setting. It does not preserve Cursor source, home, CLI path, model, or

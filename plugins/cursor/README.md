@@ -77,7 +77,7 @@ Run the native command, for example:
 The `skillopt-sleep` agent skill remains independently available if a Cursor
 version does not surface plugin commands.
 
-The Cursor-visible target is always:
+The native command's default Cursor-visible target is:
 
 ```text
 .cursor/skills/skillopt-sleep-learned/SKILL.md
@@ -134,15 +134,43 @@ selects the current workspace; `--scope all` includes every Cursor workspace.
 The source converter retains user/assistant text, tool names, and explicit turn
 errors, but excludes raw tool arguments and outputs.
 
+The first harvest uses a 72-hour lookback by default. Use
+`--lookback-hours N` to choose a wider initial window, or
+`--lookback-hours 0` to consider all available history while still respecting
+`--max-sessions`. A successful `run`, including one that mines no tasks,
+records a new harvest checkpoint. Later runs use that checkpoint instead of
+the initial lookback. Use `harvest` or `dry-run` to inspect session and task
+counts before the first stateful run; neither action advances the checkpoint.
+
 `--backend cursor` invokes the authenticated Cursor Agent CLI. Use
 `--cursor-path /path/to/cursor-agent` or `SKILLOPT_SLEEP_CURSOR_PATH` if it is
 not on PATH, and `--model` or `SKILLOPT_SLEEP_CURSOR_MODEL` to override its
-model. Ordinary model calls run in read-only Ask mode. Tool-validated replays
-run in an isolated temporary workspace and isolated Cursor config. Agent-mode
-sandboxing is disabled so the local headless configuration allowlists only the
-generated tool shims; file reads, file writes, and MCP tools are denied. The
-backend does not use `--force` or automatic MCP approval. Organization-enforced
-Cursor policies still apply.
+model. Check available identifiers with `cursor-agent --list-models` and verify
+the billed variant in Cursor's usage reporting when cost matters.
+
+## What Cursor replay evaluates
+
+SkillOpt reads the target skill and inserts its text into mined task prompts. It
+does not invoke that file as a native Cursor skill or execute commands described
+by the skill. All ordinary Cursor model calls, including mining, replay,
+judging, and reflection, run in a new empty temporary workspace in read-only Ask
+mode. File reads, file writes, and MCP tools are denied. `--project` selects the
+transcript scope, target files, state, and staging location; it does not make the
+project the Cursor Agent execution workspace.
+
+Tool-validated replays also use an isolated temporary workspace and Cursor
+config. They expose only generated local shims that record a call and return
+synthetic canned output; they do not invoke similarly named project commands.
+Agent-mode sandboxing is disabled so the local headless configuration can
+allowlist only those shims. The backend does not use `--force` or automatic MCP
+approval, and organization-enforced Cursor policies still apply.
+
+This replay is useful for textual procedures, response conventions, and output
+formats. It is not an end-to-end evaluation of skills that depend on repository
+inspection, real CLIs, browsers, running services, or filesystem changes. There
+is currently no Cursor option that enables a fresh project worktree or real
+project tools. The `replay: mock` report label refers to the prompt-replay mode,
+not to the selected model backend.
 
 The shared engine also supports `mock`, `claude`, `codex`, `copilot`,
 `handoff`, and `azure_openai` backends. Cursor is the native model-driven
@@ -155,6 +183,12 @@ Known secret-shaped strings are redacted from harvested Cursor content, and raw
 tool payloads are excluded, but pattern-based redaction is not a guarantee.
 A real backend sends truncated transcript excerpts and derived tasks to that
 backend's provider for mining, replay, judging, and reflection.
+
+Both `run` and `dry-run` perform those real-backend calls; `dry-run` prevents
+staging but does not prevent provider spend. `--max-sessions` and `--max-tasks`
+bound harvested work, not provider calls, tokens, elapsed time, or money. One
+task can require several attempt, judge, and reflection calls. Start with small
+limits and review the provider's usage reporting before increasing them.
 
 For sensitive work, split the flow at the review boundary:
 
