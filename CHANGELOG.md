@@ -7,6 +7,9 @@ All notable changes to SkillOpt are documented here. This project adheres to
 ## [Unreleased]
 
 ### Added
+- Per-night SkillOpt-Sleep `evidence.jsonl` chains for reconstructing harvest,
+  mining, replay, reflection, and gate decisions, plus a live prompt-template
+  registry with user overrides.
 - Native SkillOpt-Sleep support for Cursor, including a local plugin command
   and skill, Cursor transcript harvesting, and an optional Cursor Agent CLI
   backend. Cursor tool-aware replay remains disabled pending live permission-

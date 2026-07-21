@@ -42,6 +42,15 @@ experience → long-term competence).
 > temporarily disabled pending live permission-boundary validation.
 > Cursor and the model provider selected by Cursor may therefore receive
 > transcript-derived content.
+>
+> By default, each stateful night also writes a local `evidence.jsonl` under
+> the project staging tree (beside the report when one is staged); dry-runs
+> write evidence under the configured Sleep state directory. The log contains
+> best-effort-redacted, per-field-truncated copies
+> of miner, replay, judge, and reflection prompts and replies. Treat it as
+> sensitive local data and apply an appropriate retention policy. Set
+> `"evidence_log": false` to disable it; setting `"redact_secrets": false`
+> deliberately disables this defense-in-depth redaction.
 
 ## How to use it
 

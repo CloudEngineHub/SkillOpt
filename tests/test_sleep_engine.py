@@ -1806,7 +1806,7 @@ class TestCursorBackend(unittest.TestCase):
             stderr = io.StringIO()
 
             with mock.patch(
-                "skillopt_sleep.cycle.get_backend",
+                "skillopt_sleep.cycle.build_backend",
                 return_value=backend,
             ):
                 with mock.patch("skillopt_sleep.backend.subprocess.run") as run:
