@@ -146,7 +146,10 @@ counts before the first stateful run; neither action advances the checkpoint.
 `--cursor-path /path/to/cursor-agent` or `SKILLOPT_SLEEP_CURSOR_PATH` if it is
 not on PATH, and `--model` or `SKILLOPT_SLEEP_CURSOR_MODEL` to override its
 model. Check available identifiers with `cursor-agent --list-models` and verify
-the billed variant in Cursor's usage reporting when cost matters.
+the billed variant in Cursor's usage reporting when cost matters. The child
+process receives only an explicit runtime/authentication/locale/proxy/CA
+environment allowlist; unrelated cloud and model-provider credentials are not
+forwarded.
 
 ## What Cursor replay evaluates
 

@@ -1604,6 +1604,34 @@ class TestCursorBackend(unittest.TestCase):
             "",
         )
 
+    def test_cursor_environment_keeps_runtime_auth_and_drops_unrelated_secrets(self):
+        from skillopt_sleep.backend import CursorCliBackend
+
+        host_env = {
+            "PATH": "/usr/bin",
+            "LANG": "en_US.UTF-8",
+            "CURSOR_API_KEY": "cursor-auth",
+            "HTTPS_PROXY": "https://proxy.example",
+            "AWS_SECRET_ACCESS_KEY": "aws-secret",
+            "OPENAI_API_KEY": "openai-secret",
+            "ANTHROPIC_API_KEY": "anthropic-secret",
+            "GITHUB_TOKEN": "github-secret",
+        }
+        with tempfile.TemporaryDirectory() as runtime_dir:
+            with mock.patch.dict(os.environ, host_env, clear=True):
+                env = CursorCliBackend._isolated_environment(runtime_dir)
+
+            self.assertEqual(env["PATH"], "/usr/bin")
+            self.assertEqual(env["LANG"], "en_US.UTF-8")
+            self.assertEqual(env["CURSOR_API_KEY"], "cursor-auth")
+            self.assertEqual(env["HTTPS_PROXY"], "https://proxy.example")
+            self.assertNotIn("AWS_SECRET_ACCESS_KEY", env)
+            self.assertNotIn("OPENAI_API_KEY", env)
+            self.assertNotIn("ANTHROPIC_API_KEY", env)
+            self.assertNotIn("GITHUB_TOKEN", env)
+            self.assertTrue(env["CURSOR_CONFIG_DIR"].startswith(runtime_dir))
+            self.assertTrue(env["CURSOR_DATA_DIR"].startswith(runtime_dir))
+
     def test_nonzero_and_error_results_fail_once_with_redacted_diagnostics(self):
         from skillopt_sleep.backend import CursorBackendError, CursorCliBackend
 

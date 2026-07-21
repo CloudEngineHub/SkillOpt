@@ -1258,6 +1258,21 @@ class CursorCliBackend(CliBackend):
         "invalid configuration",
     )
     _ASK_DENY = ["Read(**)", "Write(**)", "Mcp(*:*)"]
+    # Keep the Cursor child usable across shells, credential stores, proxies,
+    # and enterprise CA setups without forwarding unrelated provider or cloud
+    # credentials from the host process.
+    _ENV_ALLOWLIST = (
+        "PATH", "HOME", "USER", "LOGNAME", "SHELL",
+        "USERPROFILE", "HOMEDRIVE", "HOMEPATH",
+        "SYSTEMROOT", "SystemRoot", "WINDIR", "COMSPEC", "PATHEXT",
+        "TMPDIR", "TMP", "TEMP",
+        "LANG", "LANGUAGE", "LC_ALL", "LC_CTYPE", "TERM", "NO_COLOR",
+        "CURSOR_API_KEY",
+        "DBUS_SESSION_BUS_ADDRESS", "XDG_RUNTIME_DIR",
+        "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY",
+        "http_proxy", "https_proxy", "all_proxy", "no_proxy",
+        "SSL_CERT_FILE", "SSL_CERT_DIR", "NODE_EXTRA_CA_CERTS",
+    )
 
     def __init__(self, model: str = "", cursor_path: str = "", timeout: int = 240) -> None:
         super().__init__(model=model or os.environ.get("SKILLOPT_SLEEP_CURSOR_MODEL", ""), timeout=timeout)
@@ -1343,7 +1358,11 @@ class CursorCliBackend(CliBackend):
                 f,
                 indent=2,
             )
-        env = os.environ.copy()
+        env = {
+            key: os.environ[key]
+            for key in CursorCliBackend._ENV_ALLOWLIST
+            if key in os.environ
+        }
         env["CURSOR_CONFIG_DIR"] = config_dir
         env["CURSOR_DATA_DIR"] = data_dir
         return env
