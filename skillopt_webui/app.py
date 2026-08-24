@@ -470,6 +470,7 @@ def build_ui():
 
     with gr.Blocks(
         title="SkillOpt WebUI",
+        theme=gr.themes.Soft(primary_hue="indigo"),
     ) as app:
         gr.Markdown("# 🧠 SkillOpt Training Dashboard")
         gr.Markdown("*SKILLOPT: Executive Strategy for Self-Evolving Agent Skills — Configure, launch, and monitor training.*")
@@ -598,6 +599,8 @@ def build_ui():
 
                 def scan_outputs(out_dir):
                     rows = []
+                    if not out_dir:
+                        return rows
                     base = PROJECT_ROOT / out_dir
                     if not base.exists():
                         return rows
@@ -643,16 +646,25 @@ def main():
     parser = argparse.ArgumentParser(description="SkillOpt WebUI")
     parser.add_argument("--port", type=int, default=7860)
     parser.add_argument("--share", action="store_true")
-    parser.add_argument("--host", type=str, default="0.0.0.0",
-                        help="Server host. Use 0.0.0.0 for public access.")
+    parser.add_argument("--host", type=str, default="127.0.0.1",
+                        help="Server host. Default is localhost; use 0.0.0.0 "
+                             "to expose publicly (no auth, use with care).")
     args = parser.parse_args()
+
+    if args.host and args.host not in ("127.0.0.1", "localhost", "::1"):
+        print(
+            f"⚠ warning: binding SkillOpt WebUI on {args.host} with no auth "
+            "exposes the Output Explorer (reads any path you type) and the "
+            "training controls to reachable clients. Prefer --host 127.0.0.1; "
+            "use 0.0.0.0 only if you understand the risk.",
+            file=sys.stderr,
+        )
 
     app = build_ui()
     app.launch(
         server_name=args.host,
         server_port=args.port,
         share=args.share,
-        theme=gr.themes.Soft(primary_hue="indigo"),
     )
 
 
