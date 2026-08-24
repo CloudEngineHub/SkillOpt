@@ -24,6 +24,11 @@ from skillopt.config import load_config as load_merged_config
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
+# Gradio moved where `theme` lives across versions: <=5 uses `Blocks(theme=...)`,
+# >=6 moved it to `launch()`. Detect the installed major so the WebUI works on
+# any supported version without an ignored-argument warning or a TypeError.
+_GRADIO_MAJOR = int((getattr(gr, "__version__", "4.0").split(".")[0]) or 4)
+
 
 # ─── Config helpers ──────────────────────────────────────────────────────────
 
@@ -468,10 +473,10 @@ def render_pipeline_html(active_stage: str = "") -> str:
 def build_ui():
     configs = discover_configs()
 
-    with gr.Blocks(
-        title="SkillOpt WebUI",
-        theme=gr.themes.Soft(primary_hue="indigo"),
-    ) as app:
+    _blocks_kwargs = {"title": "SkillOpt WebUI"}
+    if _GRADIO_MAJOR < 6:
+        _blocks_kwargs["theme"] = gr.themes.Soft(primary_hue="indigo")
+    with gr.Blocks(**_blocks_kwargs) as app:
         gr.Markdown("# 🧠 SkillOpt Training Dashboard")
         gr.Markdown("*SKILLOPT: Executive Strategy for Self-Evolving Agent Skills — Configure, launch, and monitor training.*")
 
@@ -661,11 +666,12 @@ def main():
         )
 
     app = build_ui()
-    app.launch(
-        server_name=args.host,
-        server_port=args.port,
-        share=args.share,
-    )
+    launch_kwargs = dict(server_name=args.host, server_port=args.port, share=args.share)
+    if _GRADIO_MAJOR >= 6:
+        # Gradio 6 moved the theme to launch(); applying it here avoids an
+        # ignored-argument warning.
+        launch_kwargs["theme"] = gr.themes.Soft(primary_hue="indigo")
+    app.launch(**launch_kwargs)
 
 
 if __name__ == "__main__":
