@@ -33,6 +33,8 @@ jobs:
     # where `theme` lives across majors: <6 puts it on Blocks, >=6 on launch().
     # The main `test` job installs only `.[dev]`, so those tests importorskip
     # and never exercise this code — run them here across both supported majors.
+    # 5.50.0 is the DECLARED minimum in the `webui` extra (gradio>=5.50.0,<7),
+    # so the matrix tests the actual floor, not just a mid-version.
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
