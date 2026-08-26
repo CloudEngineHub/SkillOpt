@@ -647,6 +647,20 @@ def build_ui():
     return app
 
 
+def build_launch_kwargs(server_name: str, server_port: int, share: bool) -> dict:
+    """Build the launch kwargs exactly as production ``main()`` applies them.
+
+    Gradio 6 moved the theme to ``launch()``; applying it here (rather than in
+    ``build_ui``) keeps the theme on the right object for the installed major
+    without an ignored-argument warning. Tests call this so they exercise the
+    same path a real ``skillopt-webui`` run does instead of injecting their own.
+    """
+    kwargs = dict(server_name=server_name, server_port=server_port, share=share)
+    if _GRADIO_MAJOR >= 6:
+        kwargs["theme"] = gr.themes.Soft(primary_hue="indigo")
+    return kwargs
+
+
 def main():
     parser = argparse.ArgumentParser(description="SkillOpt WebUI")
     parser.add_argument("--port", type=int, default=7860)
@@ -666,11 +680,7 @@ def main():
         )
 
     app = build_ui()
-    launch_kwargs = dict(server_name=args.host, server_port=args.port, share=args.share)
-    if _GRADIO_MAJOR >= 6:
-        # Gradio 6 moved the theme to launch(); applying it here avoids an
-        # ignored-argument warning.
-        launch_kwargs["theme"] = gr.themes.Soft(primary_hue="indigo")
+    launch_kwargs = build_launch_kwargs(args.host, args.port, args.share)
     app.launch(**launch_kwargs)
 
 

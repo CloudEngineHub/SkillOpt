@@ -28,6 +28,26 @@ jobs:
           SKILLOPT_TEST_REAL_OPENCODE: "0"
           SKILLOPT_TEST_REAL_OPENCODE_SOURCE: "0"
 
+  webui:
+    # The Gradio theme-compatibility path only exists because gradio changed
+    # where `theme` lives across majors: <6 puts it on Blocks, >=6 on launch().
+    # The main `test` job installs only `.[dev]`, so those tests importorskip
+    # and never exercise this code — run them here across both supported majors.
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        gradio-version: ["5.50.0", "6.26.0"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install (core + pinned gradio)
+        run: pip install -e ".[dev]" "gradio==${{ matrix.gradio-version }}"
+      - name: Pytest (gradio webui)
+        run: python -m pytest tests/test_webui_build_gradio.py tests/test_webui_env_preflight.py -q
+
   docs:
     runs-on: ubuntu-latest
     steps:
